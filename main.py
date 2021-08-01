@@ -17,13 +17,13 @@ from flask_ckeditor import CKEditorField
 from flask_gravatar import Gravatar
 import requests
 import smtplib
-from dotenv import dotenv_values
+import os
 
 
-config = dotenv_values(".env")
 
-MY_EMAIL = config["EMAIL"]
-MY_PASSWORD = config["PASSWORD"]
+
+MY_EMAIL = os.environ.get("EMAIL")
+MY_PASSWORD = os.environ.get("PASSWORD")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "8BYkEfBA6O6donzWlSihBXox7C0sKR6b"
