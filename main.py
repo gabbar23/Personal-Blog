@@ -9,7 +9,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy 
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user 
 from sqlalchemy.orm import relationship
-from forms import CreatePostForm , RegisterForm
 from flask_gravatar import Gravatar
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField
