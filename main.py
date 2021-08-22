@@ -244,11 +244,12 @@ def contact():
 
 
 @app.route("/new-post" ,methods=["GET","POST"])
-@admin_only
+# @admin_only
 @login_required
 def add_new_post():
-    if not current_user.is_authenticated:
+    if not current_user.id==1:
         flash("You need to login or register to comment.")
+        print("in thissssssss")
         return redirect(url_for("login"))
     else:
         form = CreatePostForm()
