@@ -1,5 +1,5 @@
 from enum import unique
-from flask import Flask, render_template, redirect, url_for, flash,request
+from flask import Flask, render_template, redirect, url_for, flash,request,session
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from datetime import date
@@ -18,7 +18,7 @@ from flask_gravatar import Gravatar
 import requests
 import smtplib
 import os
-
+from urllib.parse import urlparse, urljoin
 
 
 
@@ -42,6 +42,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri or "sqlite:///blog.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 
 
@@ -187,19 +192,30 @@ def login():
         
         if user and check_password_hash(user.password, password):
             login_user(user)
+            if 'next' in session and session['next']:
+                # if is_safe_url(session['next']):
+                return redirect(session['next'])
             return redirect(url_for('get_all_posts'))
 
+        
+
+        return redirect(url_for('index'))
+
+    session['next'] = request.args.get('next')
     return render_template("login.html", form=form)
 
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('get_all_posts'))
 
 
 @app.route("/post/<int:post_id>",methods=["GET", "POST"])
+
 def show_post(post_id):
+    
     form = CommentForm()
     requested_post = BlogPost.query.get(post_id)
 
@@ -215,6 +231,7 @@ def show_post(post_id):
         )
         db.session.add(new_comment)
         db.session.commit()
+
 
     return render_template("post.html", post=requested_post, form=form, current_user=current_user)
   
@@ -248,9 +265,12 @@ def contact():
 @login_required
 def add_new_post():
     if not current_user.id==1:
-        flash("You need to login or register to comment.")
-        print("in thissssssss")
-        return redirect(url_for("login"))
+        if current_user.is_active:
+            logout_user()
+            return redirect(url_for("login"))
+        else:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("login"))
     else:
         form = CreatePostForm()
         if form.validate_on_submit():
@@ -269,24 +289,27 @@ def add_new_post():
 
 
 @app.route("/edit-post/<int:post_id>", methods=["GET","POST"])
-@admin_only
+@login_required
 def edit_post(post_id):
-    post = BlogPost.query.get(post_id)
-    edit_form = CreatePostForm(
-        title=post.title,
-        subtitle=post.subtitle,
-        img_url=post.img_url,
-        author=post.author,
-        body=post.body
-    )
-    if edit_form.validate_on_submit():
-        post.title = edit_form.title.data
-        post.subtitle = edit_form.subtitle.data
-        post.img_url = edit_form.img_url.data
-        post.author = current_user
-        post.body = edit_form.body.data
-        db.session.commit()
-        return redirect(url_for("show_post", post_id=post.id))
+    if current_user.id==1:
+        post = BlogPost.query.get(post_id)
+        edit_form = CreatePostForm(
+            title=post.title,
+            subtitle=post.subtitle,
+            img_url=post.img_url,
+            author=post.author,
+            body=post.body
+        )
+        if edit_form.validate_on_submit():
+            post.title = edit_form.title.data
+            post.subtitle = edit_form.subtitle.data
+            post.img_url = edit_form.img_url.data
+            post.author = current_user
+            post.body = edit_form.body.data
+            db.session.commit()
+            return redirect(url_for("show_post", post_id=post.id))
+    else:
+        return redirect(url_for('login'))
 
     return render_template("make-post.html", form=edit_form)
 
