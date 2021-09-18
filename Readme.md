@@ -24,7 +24,7 @@ Predefined Admin User can add/delete/edit Blogs
 * psycopg2-binary==2.9.1
 
 
-### Contact Me will not work because of Gmail Smtp automatically adds security for no reason
+### Contact Me will not work because Gmail Smtp automatically adds security for no reason
 
 [Link](https://aman-personal-blog.herokuapp.com/)
 
